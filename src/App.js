@@ -71,6 +71,7 @@ class App extends Component {
 
 export default App;
 
+
 /*class ExplainBindingsComponent extends Component {
   constructor() {
     super();

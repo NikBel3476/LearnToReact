@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import axios from 'axios';
+import PropTypes from 'prop-types';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
@@ -10,44 +12,17 @@ const PARAM_SEARCH = 'query=';
 const PARAM_PAGE = 'page=';
 const PARAM_HPP = 'hitsPerPage=';
 
-const list = [
-  {
-    title: 'React',
-    url: 'https://reactjs.org/',
-    author: 'Jordan Walkie',
-    num_comments: 3,
-    points: 4,
-    objectID: 0,
-  },
-  {
-    title: 'Redux',
-    url: 'https://redux.js.org/',
-    author: 'Dan Abramov Andrew Clark',
-    num_comments: 2,
-    points: 5,
-    objectID: 1,
-  },
-];
-
-/*function isSearched(searchTerm) {
-  return function(item) {
-    return item.title.toLowerCase().includes(searchTerm.toLowerCase());
-  }
-}*/
-
 class App extends Component {
+  _isMounted = false;
+
   constructor(props) {
     super(props);
-
-    /*this.state = {
-      list,
-      searchTerm: '',
-    };*/
 
     this.state = {
       results: null,
       searchKey: '',
       searchTerm: DEFAULT_QUERY,
+      error: null,
     }
 
     this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
@@ -84,16 +59,21 @@ class App extends Component {
   }
 
   fetchSearchTopStories(searchTerm, page = 0) {
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
-      .then(response => response.json())
-      .then(result => this.setSearchTopStories(result))
-      .catch(error => error);
+    axios(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
+      .then(result => this._isMounted && this.setSearchTopStories(result.data))
+      .catch(error => this._isMounted && this.setState({ error }));
   }
 
   componentDidMount() {
+    this._isMounted = true;
+
     const { searchTerm } = this.state;
     this.setState({ searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
+  }
+
+  componentWillUnmount() {
+    this._isMounted =false;
   }
 
   onSearchChange(event) {
@@ -129,7 +109,8 @@ class App extends Component {
     const { 
       searchTerm, 
       results,
-      searchKey 
+      searchKey,
+      error 
     } = this.state;
 
     const page = (
@@ -144,7 +125,9 @@ class App extends Component {
       results[searchKey].hits
     ) || [];
 
-    if (!results) { return null; }
+    if (error) {
+      return <p>Что-то пошло не так.</p>;
+    }
 
     return (
       <div className="page">
@@ -157,8 +140,11 @@ class App extends Component {
             Поиск
           </Search>
         </div>
-        { results &&
-          <Table
+        { error
+          ? <div className="interactions">
+            <p>Something went wrong.</p>
+          </div> 
+          : <Table
             list={list}
             onDismiss={this.onDismiss}
           />
@@ -168,37 +154,6 @@ class App extends Component {
             Больше историй
           </Button>
         </div>
-        {/*<form>
-          <input 
-            type="text"
-            value={searchTerm}
-            onChange={this.onSearchChange}
-          />
-        </form>
-        {list.filter(isSearched(this.state.searchTerm)).map(item => {
-          const onHandleDismiss = () => 
-            this.onDismiss(item.objectID);
-
-          return (
-           <div key={item.objectID}>
-             <span>
-               <a href={item.url}>{item.title}</a>
-             </span>
-             <span>{item.author}</span>
-             <span>{item.num_comments}</span>
-             <span>{item.points}</span>
-             <span>
-                <button 
-                  onClick={() => console.log(item.objectID)}
-                  type="button"
-                >
-                  Отбросить
-                </button>
-             </span>
-           </div>
-          ) 
-        }
-      )}*/}
       </div>
     );
   }
@@ -232,7 +187,19 @@ const Table = ({ list, onDismiss }) =>
     )}
   </div>
 
-const Button = ({ onClick, className = '', children}) =>
+Table.propTypes = {
+  list: PropTypes.arrayOf(
+    PropTypes.shape({
+      objectID: PropTypes.string.isRequired,
+      author: PropTypes.string,
+      url: PropTypes.string,
+      points: PropTypes.number,
+    })
+  ).isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};
+
+const Button = ({ onClick, className, children}) =>
   <button
     onClick={onClick}
     className={className}
@@ -240,6 +207,16 @@ const Button = ({ onClick, className = '', children}) =>
   >
     {children}
   </button>
+
+Button.defaultProps = {
+  className: '',
+};
+
+Button.propTypes = {
+  onClick: PropTypes.func.isRequired,
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
 
 const Search = ({ 
   value, 
@@ -249,7 +226,7 @@ const Search = ({
 }) =>
     <form onSubmit={onSubmit}>
       <input
-        typr="text"
+        type="text"
         value={value}
         onChange={onChange}
       />
@@ -261,118 +238,11 @@ const Search = ({
 
 export default App;
 
-/*class Search extends Component {
-  render() {
-    const { value, onChange, children } = this.props;
-    return (
-      <form>
-        {children} <input
-          type="text"
-          value={value}
-          onChange={onChange}
-        />
-      </form>
-    );
-  }
-}*/
-
-/*class Table extends Component {
-  render () {
-    const { list, pattern, onDismiss } = this.props;
-    return (
-      <div>
-        {list.filter(isSearched(pattern)).map(item =>
-          <div key={item.objectID}>
-            <span>
-              <a href={item.url}>{item.title}</a>
-            </span>
-            <span>{item.author}</span>
-            <span>{item.num_comments}</span>
-            <span>{item.points}</span>
-            <span>
-              <Button onClick={() => onDismiss(item.objectID)}>
-                Отбросить
-              </Button>
-            </span>
-          </div>  
-        )}
-      </div>
-    )
-  }
-}*/
-
-/*class Button extends Component {
-  render () {
-    const {
-      onClick,
-      className = '',
-      children,
-    } = this.props;
-
-    return (
-      <button
-        onClick={onClick}
-        className={className}
-        type="button"
-      >
-        {children}
-      </button>
-    );
-  }
-}*/
-
-/*class ExplainBindingsComponent extends Component {
-  constructor() {
-    super();
-
-    this.onClickMe = this.onClickMe.bind(this);
-  }
-
-  onClickMe() {
-    console.log(this);
-  }
-
-  render() {
-    return (
-      <button
-        onClick={this.onClickMe}
-        type="button"
-      >
-        Нажми на меня
-      </button>
-    );
-  }
-}*/
-
-//export default ExplainBindingsComponent;
-
-
-/*import React from 'react';
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
-
-export default App;*/
+export {
+  Button,
+  Search,
+  Table,
+};
 
 /*class App extends Component {
   render() {

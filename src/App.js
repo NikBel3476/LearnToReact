@@ -14,7 +14,7 @@ const PARAM_SEARCH = 'query=';
 const PARAM_PAGE = 'page=';
 const PARAM_HPP = 'hitsPerPage=';
 
-const updateSearchTopStoriesState = (hits, page) => (prevState) => {
+/*const updateSearchTopStoriesState = (hits, page) => (prevState) => {
   const { searchKey, results } = prevState;
 
   const oldHits = results && results[searchKey]
@@ -33,7 +33,7 @@ const updateSearchTopStoriesState = (hits, page) => (prevState) => {
     },
     isLoading: false
   };
-};
+};*/
 
 class App extends Component {
   _isMounted = false;
@@ -371,6 +371,7 @@ const Search = ({
   onSubmit,
   children 
 }) => {
+  // eslint-disable-next-line
   let input;
   return (
     <form onSubmit={onSubmit}>
@@ -411,8 +412,8 @@ const Sort = ({
 const Loading = () =>
   <div>Загрузка ...</div>
 
-const withFoo = (Component) => (props) =>
-    <Component { ...props } />
+/*const withFoo = (Component) => (props) =>
+    <Component { ...props } />*/
 
 const withLoading = (Component) => ({isLoading, ...rest}) =>
   isLoading
